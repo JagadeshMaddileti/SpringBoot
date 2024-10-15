@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: api-gateway
+  main:
+    web-application-type: reactive
+  config:
+    import: "optional:configserver:http://localhost:8088"
+  cloud:
+    gateway:
+      routes:
+        - id: bank-service
+          uri: lb://bank-service
+          predicates:
+            - Path=/bank/**
+          filters:
+            - AuthenticationFilter
+
+        - id: account-service
+          uri: lb://account-service
+          predicates:
+            - Path=/accounts/**
+          filters:
+            - AuthenticationFilter
+
+        - id: security-service
+          uri: lb://security-service
+          predicates:
+            - Path=/auth/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
