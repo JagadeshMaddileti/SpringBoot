@@ -24,17 +24,23 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @RequestMapping(Constants.BANK_BASE_URL)
 public class BankController {
 
-    @Autowired
     private BankService bankService;
+    public static final String ACCOUNTS = "accounts";
+    public static final String ALL_BANK = "allBank";
+
+    @Autowired
+    public BankController(BankService bankService) {
+        this.bankService = bankService;
+    }
 
     @GetMapping
     public ResponseEntity<List<EntityModel<Bank>>> getAllBank(){
         List<EntityModel<Bank>> bankList=bankService.findAll().stream()
                 .map(bank ->EntityModel.of(bank,
                         linkTo(methodOn(BankController.class).getBankById(bank.getId())).withSelfRel(),
-                        linkTo(methodOn(BankController.class).getAccountsForBank(bank.getId())).withRel("accounts"),
-                        linkTo(methodOn(BankController.class).getAllBank()).withRel("allBank")))
-                .collect(Collectors.toList());
+                        linkTo(methodOn(BankController.class).getAccountsForBank(bank.getId())).withRel(ACCOUNTS),
+                        linkTo(methodOn(BankController.class).getAllBank()).withRel(ALL_BANK)))
+                .toList();
         return ResponseEntity.ok(bankList);
     }
 
@@ -44,8 +50,8 @@ public class BankController {
                 .orElseThrow(() -> new BankNotFoundException(id));
         EntityModel<Bank> bankModel = EntityModel.of(bank,
                 linkTo(methodOn(BankController.class).getBankById(id)).withSelfRel(),
-                linkTo(methodOn(BankController.class).getAccountsForBank(bank.getId())).withRel("accounts"),
-                linkTo(methodOn(BankController.class).getAllBank()).withRel("allBank"));
+                linkTo(methodOn(BankController.class).getAccountsForBank(bank.getId())).withRel(ACCOUNTS),
+                linkTo(methodOn(BankController.class).getAllBank()).withRel(ALL_BANK));
         return ResponseEntity.ok(bankModel);
     }
 
@@ -55,7 +61,7 @@ public class BankController {
 
         EntityModel<Bank> bankModel=EntityModel.of(createBank,
                 linkTo(methodOn(BankController.class).getBankById(createBank.getId())).withSelfRel(),
-                linkTo(methodOn(BankController.class).getAllBank()).withRel("allBank"));
+                linkTo(methodOn(BankController.class).getAllBank()).withRel(ALL_BANK));
         return ResponseEntity.status(HttpStatus.CREATED).body(bankModel);
     }
 
@@ -65,7 +71,7 @@ public class BankController {
                 .orElseThrow(() -> new BankNotFoundException(id));
         EntityModel<Bank> bankModel = EntityModel.of(updatedBank,
                 linkTo(methodOn(BankController.class).getBankById(id)).withSelfRel(),
-                linkTo(methodOn(BankController.class).getAllBank()).withRel("allBank"));
+                linkTo(methodOn(BankController.class).getAllBank()).withRel(ALL_BANK));
         return ResponseEntity.ok(bankModel);
     }
 
@@ -85,7 +91,7 @@ public class BankController {
                 .map(account->EntityModel.of(account,
                         linkTo(methodOn(BankController.class).getAccountsForBank(bankId)).withSelfRel(),
                         linkTo(methodOn(BankController.class).getBankById(bankId)).withRel("bank")))
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(accounts);
     }
 
@@ -93,7 +99,7 @@ public class BankController {
     public ResponseEntity<EntityModel<AccountDTO>> createAccountForBank(@PathVariable Long bankId,@RequestBody AccountDTO accountDTO){
         AccountDTO createdAccount=bankService.createAccountForBank(bankId,accountDTO);
         EntityModel<AccountDTO> accountModel=EntityModel.of(createdAccount,
-                linkTo(methodOn(BankController.class).getAccountsForBank(bankId)).withRel("accounts"),
+                linkTo(methodOn(BankController.class).getAccountsForBank(bankId)).withRel(ACCOUNTS),
                 linkTo(methodOn(BankController.class).getBankById(bankId)).withRel("bank"));
         return ResponseEntity.status(HttpStatus.CREATED).body(accountModel);
     }
@@ -102,7 +108,7 @@ public class BankController {
     public ResponseEntity<EntityModel<AccountDTO>> updateAccountforBank(@PathVariable Long bankId,@PathVariable Long accountId,@RequestBody AccountDTO accountDTO){
         AccountDTO updatedAccount=bankService.updateAccountForBank(bankId,accountId,accountDTO);
         EntityModel<AccountDTO> accountModel=EntityModel.of(updatedAccount,
-                linkTo(methodOn(BankController.class).getAccountsForBank(bankId)).withRel("accounts"),
+                linkTo(methodOn(BankController.class).getAccountsForBank(bankId)).withRel(ACCOUNTS),
                 linkTo(methodOn(BankController.class).getBankById(bankId)).withRel("bank"));
 
         return ResponseEntity.ok(accountModel);

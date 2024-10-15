@@ -188,9 +188,9 @@ class BankServiceImplTest {
     void testCreateAccountForBank_NonExistingBank() {
         when(bankRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            bankService.createAccountForBank(1L, new AccountDTO());
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> bankService.createAccountForBank(1L, new AccountDTO())
+        );
         assertEquals("Bank not found", exception.getMessage());
         verify(bankRepository, times(1)).findById(1L);
     }
@@ -216,9 +216,9 @@ class BankServiceImplTest {
     void testUpdateAccountForBank_NonExistingBank() {
         when(bankRepository.findById(anyLong())).thenReturn(Optional.empty());
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            bankService.updateAccountForBank(1L, 1L, new AccountDTO());
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> bankService.updateAccountForBank(1L, 1L, new AccountDTO())
+        );
         assertEquals("Bank not found", exception.getMessage());
         verify(bankRepository, times(1)).findById(1L);
     }
