@@ -95,7 +95,7 @@ public class BankServiceImpl implements BankService{
 
     @Override
     public AccountDTO updateAccountForBank(Long accountId, Long bankId, AccountDTO accountDTO) {
-        Bank bank = bankRepository.findById(bankId)
+        bankRepository.findById(bankId)
                 .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
 
         accountDTO.setBankId(bankId);
