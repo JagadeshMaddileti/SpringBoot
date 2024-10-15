@@ -110,7 +110,7 @@ class AuthControllerTest {
 
         assertEquals("Invalid Access! User Doesn't exist or credentials are incorrect.", exception.getMessage());
     }
-    
+
     @Test
     void testValidateToken_ValidToken() {
         String token = "validToken";
@@ -121,4 +121,64 @@ class AuthControllerTest {
         assertEquals("Token is Valid", response);
         verify(authService).validateToken(token);
     }
+    // Test case for getToken method - authRequest is null
+    @Test
+    void testGetToken_AuthRequestIsNull() {
+        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
+                authController.getToken(null));
+
+        assertEquals("Authentication failed: null", exception.getMessage());
+    }
+
+    // Test case for getToken method - authRequest has null username
+    @Test
+    void testGetToken_AuthRequestUsernameIsNull() {
+        AuthRequest authRequest = new AuthRequest(null, "password");
+
+        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
+                authController.getToken(authRequest));
+
+        assertEquals("Authentication failed: null", exception.getMessage());
+    }
+
+    // Test case for getToken method - authRequest has null password
+    @Test
+    void testGetToken_AuthRequestPasswordIsNull() {
+        AuthRequest authRequest = new AuthRequest("username", null);
+
+        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
+                authController.getToken(authRequest));
+
+        assertEquals("Authentication failed: null", exception.getMessage());
+    }
+
+    // Test case for getToken method - successful token generation, isAuthenticated() returns true
+    @Test
+    void testGetToken_AuthenticationSuccess_IsAuthenticatedTrue() throws InvalidCredentialsException {
+        AuthRequest authRequest = new AuthRequest("username", "password");
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        when(authService.generateToken("username")).thenReturn("GeneratedToken");
+
+        String token = authController.getToken(authRequest);
+
+        assertEquals("GeneratedToken", token);
+        verify(authService).generateToken("username");
+    }
+
+    // Test case for getToken method - authentication failed (isAuthenticated() returns false)
+    @Test
+    void testGetToken_AuthenticationFails_IsAuthenticatedFalse() throws InvalidCredentialsException {
+        AuthRequest authRequest = new AuthRequest("username", "password");
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.isAuthenticated()).thenReturn(false);  // Simulating failed authentication
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+
+        String token = authController.getToken(authRequest);
+
+        assertEquals("", token);  // Should return empty string as token since authentication failed
+        verify(authService, never()).generateToken(anyString());
+    }
+
 }
