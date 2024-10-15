@@ -192,6 +192,7 @@ class BankServiceImplTest {
                 () -> bankService.createAccountForBank(1L, new AccountDTO())
         );
         assertEquals("Bank not found", exception.getMessage());
+
         verify(bankRepository, times(1)).findById(1L);
     }
 
@@ -219,9 +220,12 @@ class BankServiceImplTest {
         RuntimeException exception = assertThrows(RuntimeException.class,
                 () -> bankService.updateAccountForBank(1L, 1L, new AccountDTO())
         );
+
         assertEquals("Bank not found", exception.getMessage());
+
         verify(bankRepository, times(1)).findById(1L);
     }
+
 
     @Test
     void testDeleteAccountForBank_ExistingBank() {
