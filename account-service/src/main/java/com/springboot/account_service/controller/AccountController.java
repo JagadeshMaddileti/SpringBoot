@@ -22,17 +22,23 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @RequestMapping(Constants.ACCOUNT_BASE_URL)
 public class AccountController {
 
+    private final AccountService accountService;
+    public static final String ACCOUNTS_BY_BANK_ID = "accountsByBankId";
+    public static final String ALL_ACCOUNTS = "allAccounts";
+
     @Autowired
-    public AccountService accountService;
+    public AccountController(AccountService accountService) {
+        this.accountService = accountService;
+    }
 
     @GetMapping
     public ResponseEntity<List<EntityModel<Account>>> getAllAccounts(){
         List<EntityModel<Account>> accountList= accountService.findAll().stream()
                 .map(account -> EntityModel.of(account,
                         linkTo(methodOn(AccountController.class).getAccountById(account.getId())).withSelfRel(),
-                        linkTo(methodOn(AccountController.class).getAllAccounts()).withRel("allAccounts"),
-                        linkTo(methodOn(AccountController.class).getAccountsByBankId(account.getBankId())).withRel("accountsByBankId")))
-                .collect(Collectors.toList());
+                        linkTo(methodOn(AccountController.class).getAllAccounts()).withRel(ALL_ACCOUNTS),
+                        linkTo(methodOn(AccountController.class).getAccountsByBankId(account.getBankId())).withRel(ACCOUNTS_BY_BANK_ID)))
+                .toList();
         return ResponseEntity.ok(accountList);
     }
 
@@ -42,16 +48,16 @@ public class AccountController {
                 .orElseThrow(() -> new AccountNotFoundException(id));
         return ResponseEntity.ok(EntityModel.of(account,
                 linkTo(methodOn(AccountController.class).getAccountById(id)).withSelfRel(),
-                linkTo(methodOn(AccountController.class).getAllAccounts()).withRel("allAccounts"),
-                linkTo(methodOn(AccountController.class).getAccountsByBankId(account.getBankId())).withRel("accountsByBankId")));
+                linkTo(methodOn(AccountController.class).getAllAccounts()).withRel(ALL_ACCOUNTS),
+                linkTo(methodOn(AccountController.class).getAccountsByBankId(account.getBankId())).withRel(ACCOUNTS_BY_BANK_ID)));
     }
     @GetMapping(Constants.BANK_BANK_ID)
     public ResponseEntity<List<EntityModel<Account>>> getAccountsByBankId(@PathVariable Long bankId){
         List<EntityModel<Account>> accounts=accountService.findByBankId(bankId).stream()
                 .map(account -> EntityModel.of(account,
                         linkTo(methodOn(AccountController.class).getAccountById(account.getId())).withSelfRel(),
-                        linkTo(methodOn(AccountController.class).getAccountsByBankId(bankId)).withRel("accountsByBankId")))
-                .collect(Collectors.toList());
+                        linkTo(methodOn(AccountController.class).getAccountsByBankId(bankId)).withRel(ACCOUNTS_BY_BANK_ID)))
+                .toList();
         if (accounts.isEmpty()) {
             throw new BankNotFoundException(bankId);
         }
@@ -64,8 +70,8 @@ public class AccountController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(EntityModel.of(savedAccount,
                         linkTo(methodOn(AccountController.class).getAccountById(savedAccount.getId())).withSelfRel(),
-                        linkTo(methodOn(AccountController.class).getAllAccounts()).withRel("allAccounts"),
-                        linkTo(methodOn(AccountController.class).getAccountsByBankId(savedAccount.getBankId())).withRel("accountsByBankId")));
+                        linkTo(methodOn(AccountController.class).getAllAccounts()).withRel(ALL_ACCOUNTS),
+                        linkTo(methodOn(AccountController.class).getAccountsByBankId(savedAccount.getBankId())).withRel(ACCOUNTS_BY_BANK_ID)));
     }
 
     @PutMapping(Constants.ACCOUNT_ID)
@@ -74,8 +80,8 @@ public class AccountController {
                 .orElseThrow(() -> new AccountNotFoundException(id));
         return ResponseEntity.ok(EntityModel.of(updatedAccount,
                 linkTo(methodOn(AccountController.class).getAccountById(updatedAccount.getId())).withSelfRel(),
-                linkTo(methodOn(AccountController.class).getAllAccounts()).withRel("allAccounts"),
-                linkTo(methodOn(AccountController.class).getAccountsByBankId(updatedAccount.getBankId())).withRel("accountsByBankId")));
+                linkTo(methodOn(AccountController.class).getAllAccounts()).withRel(ALL_ACCOUNTS),
+                linkTo(methodOn(AccountController.class).getAccountsByBankId(updatedAccount.getBankId())).withRel(ACCOUNTS_BY_BANK_ID)));
     }
 
     @DeleteMapping(Constants.ACCOUNT_ID)

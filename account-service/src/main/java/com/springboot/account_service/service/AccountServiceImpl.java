@@ -11,8 +11,12 @@ import java.util.Optional;
 @Service
 public class AccountServiceImpl implements AccountService{
 
+    private final AccountRepository accountRepository;
+
     @Autowired
-    private AccountRepository accountRepository;
+    public AccountServiceImpl(AccountRepository accountRepository) {
+        this.accountRepository = accountRepository;
+    }
 
     @Override
     public List<Account> findAll() {
