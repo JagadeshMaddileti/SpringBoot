@@ -9,6 +9,9 @@ import com.springboot.security_service.model.UserCredentials;
 import com.springboot.security_service.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,6 +21,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
 import java.util.List;
+import java.util.stream.Stream;
+
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.authentication.BadCredentialsException;
 
@@ -92,15 +97,20 @@ class AuthControllerTest {
         verify(authService, times(1)).generateToken("username");
     }
 
-
-    @Test
-    void testGetToken_AuthRequestNullFields() {
-        AuthRequest authRequest = new AuthRequest(null, "password");
-
+    @ParameterizedTest
+    @MethodSource("provideInvalidAuthRequests")
+    void testGetToken_InvalidAuthRequest(AuthRequest authRequest, String expectedMessage) {
         InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
                 authController.getToken(authRequest));
+        assertEquals(expectedMessage, exception.getMessage());
+    }
 
-        assertEquals("Authentication failed: null", exception.getMessage());
+    private static Stream<Arguments> provideInvalidAuthRequests() {
+        return Stream.of(
+                Arguments.of(new AuthRequest(null, "password"), "Authentication failed: null (username is missing)"),
+                Arguments.of(new AuthRequest("username", null), "Authentication failed: null (password is missing)"),
+                Arguments.of(null, "Authentication failed: null")
+        );
     }
 
     // Test case for getToken method - invalid credentials
@@ -134,29 +144,6 @@ class AuthControllerTest {
 
         assertEquals("Authentication failed: null", exception.getMessage());
     }
-
-    @Test
-    void testGetToken_AuthRequestUsernameIsNull() {
-        AuthRequest authRequest = new AuthRequest(null, "password");
-
-        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
-                authController.getToken(authRequest));
-
-        assertEquals("Authentication failed: null", exception.getMessage());
-    }
-
-
-
-    @Test
-    void testGetToken_AuthRequestPasswordIsNull() {
-        AuthRequest authRequest = new AuthRequest("username", null);
-
-        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
-                authController.getToken(authRequest));
-
-        assertEquals("Authentication failed: null", exception.getMessage());
-    }
-
 
     @Test
     void testGetToken_AuthenticationSuccess_IsAuthenticatedTrue() throws InvalidCredentialsException {
