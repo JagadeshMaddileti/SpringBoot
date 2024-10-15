@@ -37,8 +37,14 @@ public class AuthController {
 
     @PostMapping(Constants.TOKEN)
     public String getToken(@RequestBody AuthRequest authRequest) throws InvalidCredentialsException {
-        if (authRequest == null || authRequest.getUsername() == null || authRequest.getPassword() == null) {
+        if (authRequest == null) {
             throw new InvalidCredentialsException("Authentication failed: null");
+        }
+        if (authRequest.getUsername() == null) {
+            throw new InvalidCredentialsException("Authentication failed: null (username is missing)");
+        }
+        if (authRequest.getPassword() == null) {
+            throw new InvalidCredentialsException("Authentication failed: null (password is missing)");
         }
         String token = "";
         try {
