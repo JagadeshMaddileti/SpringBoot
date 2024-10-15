@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-public class AuthServiceTest {
+class AuthServiceTest {
 
     @Mock
     private UserCredentialsRepository repository;

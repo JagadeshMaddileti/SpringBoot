@@ -78,15 +78,20 @@ class AuthControllerTest {
     void testGetToken_Success() throws InvalidCredentialsException {
         AuthRequest authRequest = new AuthRequest("username", "password");
         Authentication authentication = mock(Authentication.class);
+
         when(authentication.isAuthenticated()).thenReturn(true);
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
         when(authService.generateToken("username")).thenReturn("GeneratedToken");
 
-        String token = authController.getToken(authRequest);
+        String result = authController.getToken(authRequest);
 
-        assertEquals("GeneratedToken", token);
-        verify(authService).generateToken("username");
+        assertEquals("GeneratedToken", result);
+        verify(authenticationManager, times(1))
+                .authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(authService, times(1)).generateToken("username");
     }
+
 
     @Test
     void testGetToken_AuthRequestNullFields() {
@@ -130,18 +135,19 @@ class AuthControllerTest {
         assertEquals("Authentication failed: null", exception.getMessage());
     }
 
-    // Test case for getToken method - authRequest has null username
     @Test
     void testGetToken_AuthRequestUsernameIsNull() {
         AuthRequest authRequest = new AuthRequest(null, "password");
 
+        // Act and Assert
         InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
                 authController.getToken(authRequest));
 
-        assertEquals("Authentication failed: null", exception.getMessage());
+        // Ensure that the exception message is specific to the null username case
+        assertEquals("Authentication failed: null (username is missing)", exception.getMessage());
     }
 
-    // Test case for getToken method - authRequest has null password
+
     @Test
     void testGetToken_AuthRequestPasswordIsNull() {
         AuthRequest authRequest = new AuthRequest("username", null);
@@ -152,7 +158,7 @@ class AuthControllerTest {
         assertEquals("Authentication failed: null", exception.getMessage());
     }
 
-    // Test case for getToken method - successful token generation, isAuthenticated() returns true
+    
     @Test
     void testGetToken_AuthenticationSuccess_IsAuthenticatedTrue() throws InvalidCredentialsException {
         AuthRequest authRequest = new AuthRequest("username", "password");
