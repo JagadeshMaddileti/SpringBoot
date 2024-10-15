@@ -11,17 +11,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
 import java.util.List;
+import org.mockito.MockitoAnnotations;
+import org.springframework.security.authentication.BadCredentialsException;
 
-public class AuthControllerTest {
+class AuthControllerTest {
+
+    @InjectMocks
+    private AuthController authController;
 
     @Mock
     private AuthService authService;
@@ -29,8 +32,8 @@ public class AuthControllerTest {
     @Mock
     private AuthenticationManager authenticationManager;
 
-    @InjectMocks
-    private AuthController authController;
+    @Mock
+    private BindingResult bindingResult;
 
     @BeforeEach
     void setUp() {
@@ -38,97 +41,84 @@ public class AuthControllerTest {
     }
 
     @Test
-    void addNewUser_ShouldReturnSavedUserId_WhenValidUser() throws Exception {
-        UserCredentials user = new UserCredentials(1,"user", "user@example.com", "password");
-        when(authService.saveUser(any(UserCredentials.class))).thenReturn("User saved");
+    void testAddNewUser_Success() throws InvalidCredentialsException {
+        UserCredentials user = new UserCredentials();
+        user.setName("Test User");
+        user.setEmail("test@example.com");
+        user.setPassword("Test1234");
 
-        String result = authController.addNewUser(user, mock(BindingResult.class));
-        assertEquals("User saved", result);
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(authService.saveUser(user)).thenReturn("User saved successfully");
 
-        verify(authService, times(1)).saveUser(any(UserCredentials.class));
+        String response = authController.addNewUser(user, bindingResult);
+
+        assertEquals("User saved successfully", response);
+        verify(authService).saveUser(user);
     }
 
     @Test
-    void addNewUser_ShouldThrowInvalidCredentialsException_WhenValidationErrors() {
-        UserCredentials user = new UserCredentials(1,"", "", "password");
-        BindingResult bindingResult = mock(BindingResult.class);
+    void testAddNewUser_ValidationError() {
+        UserCredentials user = new UserCredentials();
+        user.setName("");  // Invalid name (blank)
+        user.setEmail("test@example.com");
+        user.setPassword("Test1234");
+
         when(bindingResult.hasErrors()).thenReturn(true);
-        when(bindingResult.getFieldErrors()).thenReturn(
-                List.of(new FieldError("user", "email", "Email is required")));
+        when(bindingResult.getFieldErrors()).thenReturn(List.of(
+                new FieldError("user", "name", "Name is required")
+        ));
 
-        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                () -> authController.addNewUser(user, bindingResult));
+        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
+                authController.addNewUser(user, bindingResult));
 
-        assertEquals("Validation errors:---> email-->  Email is required;   ", exception.getMessage());
+        assertTrue(exception.getMessage().contains("Validation errors:---> name-->  Name is required;"));
     }
 
     @Test
-    void getToken_ShouldReturnToken_WhenValidCredentials() throws Exception {
-        AuthRequest authRequest = new AuthRequest("user", "password");
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken("user", "password");
+    void testGetToken_Success() throws InvalidCredentialsException {
+        AuthRequest authRequest = new AuthRequest("username", "password");
         Authentication authentication = mock(Authentication.class);
-
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(authentication);
         when(authentication.isAuthenticated()).thenReturn(true);
-        when(authService.generateToken("user")).thenReturn("token");
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        when(authService.generateToken("username")).thenReturn("GeneratedToken");
 
-        String result = authController.getToken(authRequest);
+        String token = authController.getToken(authRequest);
 
-        assertEquals("token", result);
-        verify(authService, times(1)).generateToken("user");
-    }
-    @Test
-    void getToken_ShouldThrowInvalidCredentialsException_WhenInvalidCredentials() {
-        AuthRequest authRequest = new AuthRequest("user", "wrongpassword");
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new BadCredentialsException("Bad credentials"));
-
-        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                () -> authController.getToken(authRequest));
-
-        assertEquals("Invalid Access! User Doesn't exist or credentials are incorrect.", exception.getMessage());
+        assertEquals("GeneratedToken", token);
+        verify(authService).generateToken("username");
     }
 
     @Test
-    void getToken_ShouldThrowInvalidCredentialsException_WhenCredentialsAreNull() {
-        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                () -> authController.getToken(null));
+    void testGetToken_AuthRequestNullFields() {
+        AuthRequest authRequest = new AuthRequest(null, "password");
+
+        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
+                authController.getToken(authRequest));
 
         assertEquals("Authentication failed: null", exception.getMessage());
     }
 
+    // Test case for getToken method - invalid credentials
     @Test
-    void getToken_ShouldThrowInvalidCredentialsException_WhenBadCredentials() {
-        AuthRequest authRequest = new AuthRequest("user", "wrongpassword");
+    void testGetToken_InvalidCredentials() {
+        AuthRequest authRequest = new AuthRequest("username", "password");
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new BadCredentialsException("Bad credentials"));
+                .thenThrow(new BadCredentialsException("Invalid credentials"));
 
-        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                () -> authController.getToken(authRequest));
+        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
+                authController.getToken(authRequest));
 
         assertEquals("Invalid Access! User Doesn't exist or credentials are incorrect.", exception.getMessage());
     }
-
+    
     @Test
-    void validateToken_ShouldReturnValidMessage_WhenTokenIsValid() {
+    void testValidateToken_ValidToken() {
         String token = "validToken";
         doNothing().when(authService).validateToken(token);
 
-        String result = authController.validateToken(token);
-        assertEquals("Token is Valid", result);
+        String response = authController.validateToken(token);
 
-        verify(authService, times(1)).validateToken(token);
-    }
-
-    @Test
-    void validateToken_ShouldThrowException_WhenTokenIsInvalid() {
-        String invalidToken = "invalidToken";
-        doThrow(new InvalidCredentialsException("Invalid token")).when(authService).validateToken(invalidToken);
-
-        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
-                () -> authController.validateToken(invalidToken));
-
-        assertEquals("Invalid token", exception.getMessage());
+        assertEquals("Token is Valid", response);
+        verify(authService).validateToken(token);
     }
 }

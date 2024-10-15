@@ -33,7 +33,7 @@
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 		<sonar.projectKey>springboot-final-assignment_security-service</sonar.projectKey>
 		<sonar.exclusions>
-			**/com/springboot/security_service/config/**
+			**/com/springboot/security_service/config/**,
 			**/com/springboot/security_service/exception/**,
 			**/com/springboot/security_service/model/**,
 			**/com/springboot/security_service/repository/**,
