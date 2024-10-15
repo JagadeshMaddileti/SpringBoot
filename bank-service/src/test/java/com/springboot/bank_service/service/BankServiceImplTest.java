@@ -1,266 +1,121 @@
 package com.springboot.bank_service.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
-
 import com.springboot.bank_service.dto.AccountDTO;
 import com.springboot.bank_service.model.Bank;
 import com.springboot.bank_service.repository.BankRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class BankServiceImplTest {
+@Service
+public class BankServiceImpl implements BankService{
 
-    @Mock
     private BankRepository bankRepository;
-
-    @Mock
     private RestTemplate restTemplate;
-
-    @InjectMocks
-    private BankServiceImpl bankServiceImpl;
-
-    @Value("${account.service.url}")
     private String accountServiceUrl;
+    public static final String BANK_NOT_FOUND_MESSAGE = "Bank not found";
 
-    private Bank bank;
-    private AccountDTO accountDTO;
-
-    @BeforeEach
-    public void setUp() {
-        MockitoAnnotations.openMocks(this);
-        bank = new Bank();
-        bank.setId(1L);
-        bank.setName("Test Bank");
-        bank.setLocation("Test Location");
-        bank.setBranchCode("TST001");
-
-        accountDTO = new AccountDTO();
-        accountDTO.setId(1L);
-        accountDTO.setAccountType("Test Account");
-        accountDTO.setBankId(1L);
+    public BankServiceImpl(BankRepository bankRepository, RestTemplate restTemplate,
+                           @Value("${account.service.url}") String accountServiceUrl) {
+        this.bankRepository = bankRepository;
+        this.restTemplate = restTemplate;
+        this.accountServiceUrl = accountServiceUrl;
     }
 
-    @Test
-    public void testFindAll() {
-        List<Bank> banks = new ArrayList<>();
-        banks.add(bank);
-
-        when(bankRepository.findAll()).thenReturn(banks);
-
-        List<Bank> result = bankServiceImpl.findAll();
-
-        assertEquals(1, result.size());
-        verify(bankRepository).findAll();
+    @Override
+    public List<Bank> findAll() {
+         return bankRepository.findAll();
     }
 
-    @Test
-    public void testFindById() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
-
-        Optional<Bank> result = bankServiceImpl.findById(1L);
-
-        assertTrue(result.isPresent());
-        assertEquals(bank, result.get());
-        verify(bankRepository).findById(1L);
+    @Override
+    public Optional<Bank> findById(Long id) {
+        return bankRepository.findById(id);
     }
 
-    @Test
-    public void testSave() {
-        when(bankRepository.save(bank)).thenReturn(bank);
-
-        Bank result = bankServiceImpl.save(bank);
-
-        assertEquals(bank, result);
-        verify(bankRepository).save(bank);
+    @Override
+    public Bank save(Bank bank) {
+        return bankRepository.save(bank);
     }
 
-    @Test
-    public void testDeleteSuccess() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
-
-        bankServiceImpl.delete(1L);
-
-        verify(restTemplate).delete(accountServiceUrl + "/accounts/bank/1");
-        verify(bankRepository).delete(bank);
+    @Override
+    public boolean delete(Long id) {
+        return bankRepository.findById(id)
+                .map(bank -> {
+                    restTemplate.delete(accountServiceUrl+"/accounts/bank/"+id);
+                    bankRepository.delete(bank);
+                    return true;
+                })
+                .orElse(false);
     }
 
-    @Test
-    public void testDeleteNotFound() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.empty());
-
-        boolean result = bankServiceImpl.delete(1L);
-
-        assertFalse(result);
-        verify(bankRepository).findById(1L);
-        verify(bankRepository, never()).delete(any());
+    @Override
+    public Optional<Bank> update(Long id, Bank bankDetails) {
+        return bankRepository.findById(id)
+                .map(bank -> {
+                    bank.setName(bankDetails.getName());
+                    bank.setLocation(bankDetails.getLocation());
+                    bank.setBranchCode(bankDetails.getBranchCode());
+                    return bankRepository.save(bank);
+                });
     }
 
-    @Test
-    public void testUpdateSuccess() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
-        Bank updatedBank = new Bank();
-        updatedBank.setName("Updated Bank");
-        updatedBank.setLocation("Updated Location");
-        updatedBank.setBranchCode("TST002");
-
-        when(bankRepository.save(any())).thenReturn(updatedBank);
-
-        Optional<Bank> result = bankServiceImpl.update(1L, updatedBank);
-
-        assertTrue(result.isPresent());
-        assertEquals(updatedBank.getName(), result.get().getName());
-        verify(bankRepository).findById(1L);
-        verify(bankRepository).save(any());
+    @Override
+    public List<AccountDTO> getAccountsForBank(Long bankId) {
+        Bank bank = bankRepository.findById(bankId)
+                .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
+        ResponseEntity<List<AccountDTO>> response=restTemplate.exchange(
+                accountServiceUrl + "/accounts/bank/" + bankId,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<List<AccountDTO>>() {
+                }
+        );
+        return response.getBody();
     }
 
-    @Test
-    public void testUpdateNotFound() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.empty());
-
-        Optional<Bank> result = bankServiceImpl.update(1L, bank);
-
-        assertFalse(result.isPresent());
-        verify(bankRepository).findById(1L);
-        verify(bankRepository, never()).save(any());
+    @Override
+    public AccountDTO createAccountForBank(Long bankId, AccountDTO accountDTO) {
+        bankRepository.findById(bankId)
+                .orElseThrow(()-> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
+        accountDTO.setBankId(bankId);
+        ResponseEntity<AccountDTO> response=restTemplate.postForEntity(
+                accountServiceUrl + "/accounts",
+                accountDTO,
+                AccountDTO.class
+        );
+        return response.getBody();
     }
 
-    @Test
-    public void testGetAccountsForBankSuccess() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
-        List<AccountDTO> accountList = new ArrayList<>();
-        accountList.add(accountDTO);
+    @Override
+    public AccountDTO updateAccountForBank(Long accountId, Long bankId, AccountDTO accountDTO) {
+        Bank bank = bankRepository.findById(bankId)
+                .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
 
-        ResponseEntity<List<AccountDTO>> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.getBody()).thenReturn(accountList);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), isNull(), eq(new ParameterizedTypeReference<List<AccountDTO>>() {})))
-                .thenReturn(responseEntity);
+        accountDTO.setBankId(bankId);
 
-        List<AccountDTO> result = bankServiceImpl.getAccountsForBank(1L);
-
-        assertEquals(1, result.size());
-        verify(bankRepository).findById(1L);
-        verify(restTemplate).exchange(anyString(), eq(HttpMethod.GET), isNull(), eq(new ParameterizedTypeReference<List<AccountDTO>>() {}));
+        ResponseEntity<AccountDTO> response = restTemplate.exchange(
+                accountServiceUrl + "/accounts/" + accountId,
+                HttpMethod.PUT,
+                new HttpEntity<>(accountDTO),
+                AccountDTO.class
+        );
+        return response.getBody();
     }
 
-    @Test
-    public void testGetAccountsForBankNotFound() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            bankServiceImpl.getAccountsForBank(1L);
-        });
+    @Override
+    public void deleteAccountforBank(Long accountId, Long bankId) {
+        Bank bank = bankRepository.findById(bankId)
+                .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
 
-        assertEquals("Bank not found", exception.getMessage());
-        verify(bankRepository).findById(1L);
+        restTemplate.delete(accountServiceUrl + "/accounts/" + accountId);
     }
 
-    @Test
-    public void testCreateAccountForBankSuccess() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
-        ResponseEntity<AccountDTO> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.getBody()).thenReturn(accountDTO);
-        when(restTemplate.postForEntity(anyString(), any(), eq(AccountDTO.class)))
-                .thenReturn(responseEntity);
-
-        AccountDTO result = bankServiceImpl.createAccountForBank(1L, accountDTO);
-
-        assertEquals(accountDTO, result);
-        verify(bankRepository).findById(1L);
-        verify(restTemplate).postForEntity(anyString(), any(), eq(AccountDTO.class));
-    }
-
-    @Test
-    public void testCreateAccountForBankNotFound() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.empty());
-
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            bankServiceImpl.createAccountForBank(1L, accountDTO);
-        });
-
-        assertEquals("Bank not found", exception.getMessage());
-        verify(bankRepository).findById(1L);
-    }
-
-    @Test
-    public void testUpdateAccountForBankSuccess() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
-        ResponseEntity<AccountDTO> responseEntity = mock(ResponseEntity.class);
-        when(responseEntity.getBody()).thenReturn(accountDTO);
-        when(restTemplate.exchange(anyString(), eq(HttpMethod.PUT), any(HttpEntity.class), eq(AccountDTO.class)))
-                .thenReturn(responseEntity);
-
-        AccountDTO result = bankServiceImpl.updateAccountForBank(1L, 1L, accountDTO);
-
-        assertEquals(accountDTO, result);
-        verify(bankRepository).findById(1L);
-        verify(restTemplate).exchange(anyString(), eq(HttpMethod.PUT), any(HttpEntity.class), eq(AccountDTO.class));
-    }
-
-    @Test
-    public void testUpdateAccountForBankNotFound() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.empty());
-
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            bankServiceImpl.updateAccountForBank(1L, 1L, accountDTO);
-        });
-
-        assertEquals("Bank not found", exception.getMessage());
-        verify(bankRepository).findById(1L);
-    }
-
-    @Test
-    public void testDeleteAccountForBankSuccess() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
-
-        bankServiceImpl.deleteAccountforBank(1L, 1L);
-
-        verify(bankRepository).findById(1L);
-        verify(restTemplate).delete(accountServiceUrl + "/accounts/1");
-    }
-
-    @Test
-    public void testDeleteAccountForBankNotFound() {
-        when(bankRepository.findById(1L)).thenReturn(Optional.empty());
-
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            bankServiceImpl.deleteAccountforBank(1L, 1L);
-        });
-
-        assertEquals("Bank not found", exception.getMessage());
-        verify(bankRepository).findById(1L);
-        verify(restTemplate, never()).delete(anyString());
-    }
 }
