@@ -25,7 +25,7 @@ import org.springframework.http.HttpEntity;
 import java.util.ArrayList;
 
 
-public class BankServiceImplTest {
+class BankServiceImplTest {
 
     @Mock
     private BankRepository bankRepository;
@@ -58,7 +58,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testFindAll() {
+    void testFindAll() {
         List<Bank> banks = new ArrayList<>();
         banks.add(bank);
 
@@ -71,7 +71,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testFindById() {
+    void testFindById() {
         when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
 
         Optional<Bank> result = bankServiceImpl.findById(1L);
@@ -82,7 +82,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testSave() {
+    void testSave() {
         when(bankRepository.save(bank)).thenReturn(bank);
 
         Bank result = bankServiceImpl.save(bank);
@@ -92,7 +92,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testDeleteSuccess() {
+    void testDeleteSuccess() {
         when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
 
         bankServiceImpl.delete(1L);
@@ -102,7 +102,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testDeleteNotFound() {
+    void testDeleteNotFound() {
         when(bankRepository.findById(1L)).thenReturn(Optional.empty());
 
         boolean result = bankServiceImpl.delete(1L);
@@ -113,7 +113,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testUpdateSuccess() {
+    void testUpdateSuccess() {
         when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
         Bank updatedBank = new Bank();
         updatedBank.setName("Updated Bank");
@@ -131,7 +131,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testUpdateNotFound() {
+    void testUpdateNotFound() {
         when(bankRepository.findById(1L)).thenReturn(Optional.empty());
 
         Optional<Bank> result = bankServiceImpl.update(1L, bank);
@@ -142,7 +142,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testGetAccountsForBankSuccess() {
+    void testGetAccountsForBankSuccess() {
         when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
         List<AccountDTO> accountList = new ArrayList<>();
         accountList.add(accountDTO);
@@ -160,7 +160,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testGetAccountsForBankNotFound() {
+    void testGetAccountsForBankNotFound() {
         when(bankRepository.findById(1L)).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(RuntimeException.class, () -> {
@@ -172,7 +172,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testCreateAccountForBankSuccess() {
+    void testCreateAccountForBankSuccess() {
         when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
         ResponseEntity<AccountDTO> responseEntity = mock(ResponseEntity.class);
         when(responseEntity.getBody()).thenReturn(accountDTO);
@@ -187,7 +187,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testCreateAccountForBankNotFound() {
+    void testCreateAccountForBankNotFound() {
         when(bankRepository.findById(1L)).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(RuntimeException.class, () -> {
@@ -199,7 +199,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testUpdateAccountForBankSuccess() {
+    void testUpdateAccountForBankSuccess() {
         when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
         ResponseEntity<AccountDTO> responseEntity = mock(ResponseEntity.class);
         when(responseEntity.getBody()).thenReturn(accountDTO);
@@ -214,7 +214,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testUpdateAccountForBankNotFound() {
+    void testUpdateAccountForBankNotFound() {
         when(bankRepository.findById(1L)).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(RuntimeException.class, () -> {
@@ -226,7 +226,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testDeleteAccountForBankSuccess() {
+    void testDeleteAccountForBankSuccess() {
         when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
 
         bankServiceImpl.deleteAccountforBank(1L, 1L);
@@ -236,7 +236,7 @@ public class BankServiceImplTest {
     }
 
     @Test
-    public void testDeleteAccountForBankNotFound() {
+    void testDeleteAccountForBankNotFound() {
         when(bankRepository.findById(1L)).thenReturn(Optional.empty());
 
         Exception exception = assertThrows(RuntimeException.class, () -> {
