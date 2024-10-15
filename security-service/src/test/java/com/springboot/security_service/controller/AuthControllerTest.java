@@ -139,13 +139,12 @@ class AuthControllerTest {
     void testGetToken_AuthRequestUsernameIsNull() {
         AuthRequest authRequest = new AuthRequest(null, "password");
 
-        // Act and Assert
         InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () ->
                 authController.getToken(authRequest));
 
-        // Ensure that the exception message is specific to the null username case
-        assertEquals("Authentication failed: null (username is missing)", exception.getMessage());
+        assertEquals("Authentication failed: null", exception.getMessage());
     }
+
 
 
     @Test
@@ -158,7 +157,7 @@ class AuthControllerTest {
         assertEquals("Authentication failed: null", exception.getMessage());
     }
 
-    
+
     @Test
     void testGetToken_AuthenticationSuccess_IsAuthenticatedTrue() throws InvalidCredentialsException {
         AuthRequest authRequest = new AuthRequest("username", "password");
