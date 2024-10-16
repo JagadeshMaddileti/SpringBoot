@@ -3,6 +3,7 @@ package com.springboot.bank_service.service;
 import com.springboot.bank_service.dto.AccountDTO;
 import com.springboot.bank_service.model.Bank;
 import com.springboot.bank_service.repository.BankRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -14,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class BankServiceImpl implements BankService{
 
@@ -70,6 +72,8 @@ public class BankServiceImpl implements BankService{
     public List<AccountDTO> getAccountsForBank(Long bankId) {
        Bank bank = bankRepository.findById(bankId)
                 .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
+
+       log.info("Bank :"+bank);
         ResponseEntity<List<AccountDTO>> response=restTemplate.exchange(
                 accountServiceUrl + "/accounts/bank/" + bankId,
                 HttpMethod.GET,
@@ -84,6 +88,7 @@ public class BankServiceImpl implements BankService{
     public AccountDTO createAccountForBank(Long bankId, AccountDTO accountDTO) {
          Bank bank = bankRepository.findById(bankId)
                 .orElseThrow(()-> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
+        log.info("Bank :"+bank);
         accountDTO.setBankId(bankId);
         ResponseEntity<AccountDTO> response=restTemplate.postForEntity(
                 accountServiceUrl + "/accounts",
@@ -97,7 +102,7 @@ public class BankServiceImpl implements BankService{
     public AccountDTO updateAccountForBank(Long accountId, Long bankId, AccountDTO accountDTO) {
        Bank bank = bankRepository.findById(bankId)
                 .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
-
+        log.info("Bank :"+bank);
         accountDTO.setBankId(bankId);
 
         ResponseEntity<AccountDTO> response = restTemplate.exchange(
@@ -114,6 +119,7 @@ public class BankServiceImpl implements BankService{
     public void deleteAccountforBank(Long accountId, Long bankId) {
         Bank bank = bankRepository.findById(bankId)
                 .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
+        log.info("Bank :"+bank);
 
         restTemplate.delete(accountServiceUrl + "/accounts/" + accountId);
     }
