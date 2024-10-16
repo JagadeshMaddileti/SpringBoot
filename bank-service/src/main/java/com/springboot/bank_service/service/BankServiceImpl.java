@@ -23,6 +23,7 @@ public class BankServiceImpl implements BankService{
     private RestTemplate restTemplate;
     private String accountServiceUrl;
     public static final String BANK_NOT_FOUND_MESSAGE = "Bank not found";
+    public static final String BANK="Bank ";
 
     public BankServiceImpl(BankRepository bankRepository, RestTemplate restTemplate,
                            @Value("${account.service.url}") String accountServiceUrl) {
@@ -73,7 +74,7 @@ public class BankServiceImpl implements BankService{
        Bank bank = bankRepository.findById(bankId)
                 .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
 
-       log.info("Bank :"+bank);
+       log.info(BANK+bank);
         ResponseEntity<List<AccountDTO>> response=restTemplate.exchange(
                 accountServiceUrl + "/accounts/bank/" + bankId,
                 HttpMethod.GET,
@@ -88,7 +89,7 @@ public class BankServiceImpl implements BankService{
     public AccountDTO createAccountForBank(Long bankId, AccountDTO accountDTO) {
          Bank bank = bankRepository.findById(bankId)
                 .orElseThrow(()-> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
-        log.info("Bank :"+bank);
+        log.info(BANK+bank);
         accountDTO.setBankId(bankId);
         ResponseEntity<AccountDTO> response=restTemplate.postForEntity(
                 accountServiceUrl + "/accounts",
@@ -102,7 +103,7 @@ public class BankServiceImpl implements BankService{
     public AccountDTO updateAccountForBank(Long accountId, Long bankId, AccountDTO accountDTO) {
        Bank bank = bankRepository.findById(bankId)
                 .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
-        log.info("Bank :"+bank);
+        log.info(BANK+bank);
         accountDTO.setBankId(bankId);
 
         ResponseEntity<AccountDTO> response = restTemplate.exchange(
@@ -119,7 +120,7 @@ public class BankServiceImpl implements BankService{
     public void deleteAccountforBank(Long accountId, Long bankId) {
         Bank bank = bankRepository.findById(bankId)
                 .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
-        log.info("Bank :"+bank);
+        log.info(BANK+bank);
 
         restTemplate.delete(accountServiceUrl + "/accounts/" + accountId);
     }
