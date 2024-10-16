@@ -68,7 +68,7 @@ public class BankServiceImpl implements BankService{
 
     @Override
     public List<AccountDTO> getAccountsForBank(Long bankId) {
-        bankRepository.findById(bankId)
+       Bank bank = bankRepository.findById(bankId)
                 .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
         ResponseEntity<List<AccountDTO>> response=restTemplate.exchange(
                 accountServiceUrl + "/accounts/bank/" + bankId,
@@ -82,7 +82,7 @@ public class BankServiceImpl implements BankService{
 
     @Override
     public AccountDTO createAccountForBank(Long bankId, AccountDTO accountDTO) {
-        bankRepository.findById(bankId)
+         Bank bank = bankRepository.findById(bankId)
                 .orElseThrow(()-> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
         accountDTO.setBankId(bankId);
         ResponseEntity<AccountDTO> response=restTemplate.postForEntity(
@@ -95,7 +95,7 @@ public class BankServiceImpl implements BankService{
 
     @Override
     public AccountDTO updateAccountForBank(Long accountId, Long bankId, AccountDTO accountDTO) {
-        bankRepository.findById(bankId)
+       Bank bank = bankRepository.findById(bankId)
                 .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
 
         accountDTO.setBankId(bankId);
@@ -112,7 +112,7 @@ public class BankServiceImpl implements BankService{
 
     @Override
     public void deleteAccountforBank(Long accountId, Long bankId) {
-        bankRepository.findById(bankId)
+        Bank bank = bankRepository.findById(bankId)
                 .orElseThrow(() -> new RuntimeException(BANK_NOT_FOUND_MESSAGE));
 
         restTemplate.delete(accountServiceUrl + "/accounts/" + accountId);
